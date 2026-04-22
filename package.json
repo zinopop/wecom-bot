@@ -1,0 +1,34 @@
+{
+  "name": "wecom-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "企业微信智能机器人：多 agent (claude/gemini/codex) 统一接入 + 提醒调度",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@wecom/aibot-node-sdk": "^1.0.0",
+    "better-sqlite3": "^12.9.0",
+    "cron-parser": "^5.5.0",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.28.1",
+    "nanoid": "^5.1.9",
+    "pino": "^9.5.0",
+    "pino-pretty": "^11.3.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
