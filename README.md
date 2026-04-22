@@ -74,7 +74,39 @@ docs/
 
 ## 快速开始
 
+### 1. 安装 agent CLI（至少一个）
+
+根据你 `.env` 里 `AGENT=` 的选择装对应 CLI，并完成登录：
+
+**Claude Code**（推荐，真流式 + MCP + 原生多轮）
 ```bash
+# macOS / Linux 一键安装脚本
+curl -fsSL https://claude.ai/install.sh | bash
+# 或走 npm
+npm install -g @anthropic-ai/claude-code
+
+claude login                        # 首次登录（OAuth 或 API key）
+claude --version                    # 验证
+```
+参考：https://docs.claude.com/en/docs/claude-code
+
+**Gemini CLI**
+```bash
+npm install -g @google/gemini-cli
+gemini                              # 首次走浏览器 OAuth 或设 GEMINI_API_KEY
+```
+
+**OpenAI Codex CLI**
+```bash
+npm install -g @openai/codex
+codex                               # 首次 OAuth / OPENAI_API_KEY
+```
+
+### 2. 拉仓库、装依赖、配 env、起服务
+
+```bash
+git clone https://github.com/zinopop/wecom-bot.git
+cd wecom-bot
 cp .env.example .env
 npm install
 npm run dev
@@ -89,6 +121,8 @@ WECOM_BOT_ID=...
 WECOM_BOT_SECRET=...
 HTTP_TOKEN=...
 ```
+
+企微 `WECOM_BOT_ID` / `WECOM_BOT_SECRET` 在企业微信管理后台 → 智能机器人 → API 配置 → 长连接模式 获取。
 
 ## 扩展
 
