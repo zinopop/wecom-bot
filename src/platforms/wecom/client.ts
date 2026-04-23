@@ -15,16 +15,20 @@ import type {
 } from '../../core/types.js';
 
 export interface WecomConfig {
+  /** Registry 中的平台名，如 `wecom` 或 `wecom:hr`，也用于 SessionRef.platform */
+  platform?: string;
   botId: string;
   secret: string;
   heartbeatIntervalMs?: number;
 }
 
 export class WecomPlatform implements Platform {
-  readonly name = 'wecom';
+  readonly name: string;
   private ws: any;
 
-  constructor(private cfg: WecomConfig) {}
+  constructor(private cfg: WecomConfig) {
+    this.name = cfg.platform ?? 'wecom';
+  }
 
   async start(
     onMessage: (m: IncomingMessage) => void,
@@ -55,7 +59,7 @@ export class WecomPlatform implements Platform {
     this.ws.on('message.image', dispatch);
     this.ws.on('message.voice', dispatch);
     this.ws.on('event.enter_chat', (frame: WsFrame<any>) => {
-      const ref = toSessionRef(frame.body);
+      const ref = this.toSessionRef(frame.body);
       if (ref && onEnter) onEnter(ref);
       this.ws.replyWelcome(frame, {
         msgtype: 'text',
@@ -70,7 +74,7 @@ export class WecomPlatform implements Platform {
     );
 
     this.ws.connect();
-    logger.info({ botId: this.cfg.botId }, 'wecom connecting');
+    logger.info({ platform: this.name, botId: this.cfg.botId }, 'wecom connecting');
   }
 
   async stop(): Promise<void> {
@@ -121,10 +125,21 @@ export class WecomPlatform implements Platform {
     });
   }
 
+  private toSessionRef(body: any): SessionRef | null {
+    if (!body?.from?.userid) return null;
+    const chatType: ChatType = body.chattype === 'group' ? 'group' : 'single';
+    return {
+      platform: this.name,
+      chatType,
+      chatId: body.chatid ?? null,
+      userId: body.from.userid,
+    };
+  }
+
   private async toIncoming(frame: WsFrame<any>): Promise<IncomingMessage | null> {
     const body = frame.body;
     if (!body) return null;
-    const ref = toSessionRef(body);
+    const ref = this.toSessionRef(body);
     if (!ref) return null;
 
     let text = '';
@@ -185,17 +200,6 @@ export class WecomPlatform implements Platform {
       return null;
     }
   }
-}
-
-function toSessionRef(body: any): SessionRef | null {
-  if (!body?.from?.userid) return null;
-  const chatType: ChatType = body.chattype === 'group' ? 'group' : 'single';
-  return {
-    platform: 'wecom',
-    chatType,
-    chatId: body.chatid ?? null,
-    userId: body.from.userid,
-  };
 }
 
 function resolveTarget(ref: SessionRef): string {

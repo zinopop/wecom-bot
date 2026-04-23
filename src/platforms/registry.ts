@@ -30,11 +30,17 @@ export function buildPlatforms(): PlatformRegistry {
   for (const name of config.platforms) {
     switch (name) {
       case 'wecom':
-        if (!config.wecom) {
-          logger.warn('PLATFORMS 含 wecom 但缺少 WECOM_BOT_ID/SECRET，跳过');
+        if (config.wecomBots.length === 0) {
+          logger.warn('PLATFORMS 含 wecom 但未配置 WECOM_BOTS 或 WECOM_BOT_ID/SECRET，跳过');
           continue;
         }
-        registry.register(new WecomPlatform(config.wecom));
+        for (const bot of config.wecomBots) {
+          registry.register(new WecomPlatform(bot));
+          logger.info(
+            { platform: bot.platform, botId: bot.botId },
+            'wecom bot registered',
+          );
+        }
         break;
       case 'lark':
         if (!config.lark) {

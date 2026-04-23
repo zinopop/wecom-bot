@@ -40,18 +40,60 @@ function platforms(): string[] {
     .filter(Boolean);
 }
 
-const wecomBotId = process.env.WECOM_BOT_ID;
-const wecomSecret = process.env.WECOM_BOT_SECRET;
+export interface WecomBotConfig {
+  /** Registry 中的平台名，如 `wecom`（单 bot 兼容模式）或 `wecom:hr`（多 bot 模式） */
+  platform: string;
+  botId: string;
+  secret: string;
+  heartbeatIntervalMs: number;
+}
+
+function wecomBots(): WecomBotConfig[] {
+  const raw = process.env.WECOM_BOTS?.trim();
+  if (raw) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      throw new Error(`WECOM_BOTS is not valid JSON: ${(e as Error).message}`);
+    }
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('WECOM_BOTS must be a non-empty JSON array');
+    }
+    const ids = new Set<string>();
+    return parsed.map((item, i) => {
+      const obj = item as Record<string, unknown>;
+      const id = String(obj.id ?? '').trim();
+      const botId = String(obj.botId ?? '').trim();
+      const secret = String(obj.secret ?? '').trim();
+      if (!id) throw new Error(`WECOM_BOTS[${i}].id is required`);
+      if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
+        throw new Error(`WECOM_BOTS[${i}].id must match [a-zA-Z0-9_-]+, got ${id}`);
+      }
+      if (ids.has(id)) throw new Error(`WECOM_BOTS[${i}].id duplicated: ${id}`);
+      ids.add(id);
+      if (!botId) throw new Error(`WECOM_BOTS[${i}].botId is required`);
+      if (!secret) throw new Error(`WECOM_BOTS[${i}].secret is required`);
+      const hb = Number(obj.heartbeatIntervalMs ?? 30_000);
+      return { platform: `wecom:${id}`, botId, secret, heartbeatIntervalMs: hb };
+    });
+  }
+  const legacyId = process.env.WECOM_BOT_ID;
+  const legacySecret = process.env.WECOM_BOT_SECRET;
+  if (legacyId && legacySecret) {
+    return [
+      { platform: 'wecom', botId: legacyId, secret: legacySecret, heartbeatIntervalMs: 30_000 },
+    ];
+  }
+  return [];
+}
 
 const larkAppId = process.env.LARK_APP_ID;
 const larkSecret = process.env.LARK_APP_SECRET;
 
 export const config = {
   platforms: platforms(),
-  wecom:
-    wecomBotId && wecomSecret
-      ? { botId: wecomBotId, secret: wecomSecret, heartbeatIntervalMs: 30_000 }
-      : undefined,
+  wecomBots: wecomBots(),
   lark:
     larkAppId && larkSecret
       ? {
