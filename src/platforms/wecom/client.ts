@@ -53,6 +53,7 @@ export class WecomPlatform implements Platform {
     this.ws.on('message.text', dispatch);
     this.ws.on('message.mixed', dispatch);
     this.ws.on('message.image', dispatch);
+    this.ws.on('message.voice', dispatch);
     this.ws.on('event.enter_chat', (frame: WsFrame<any>) => {
       const ref = toSessionRef(frame.body);
       if (ref && onEnter) onEnter(ref);
@@ -131,6 +132,10 @@ export class WecomPlatform implements Platform {
 
     if (body.msgtype === 'text') {
       text = body.text?.content ?? '';
+    } else if (body.msgtype === 'voice') {
+      // WeCom 服务端已把语音转成文字，直接拿 content
+      text = body.voice?.content ?? '';
+      logger.info({ msgId: body.msgid, chars: text.length }, 'inbound voice transcribed');
     } else if (body.msgtype === 'image' && body.image?.url && body.image?.aeskey) {
       const att = await this.downloadImage(body.msgid, body.image);
       if (att) attachments.push(att);
@@ -139,6 +144,8 @@ export class WecomPlatform implements Platform {
       for (const item of body.mixed.msg_item) {
         if (item.msgtype === 'text') {
           texts.push(item.text?.content ?? '');
+        } else if (item.msgtype === 'voice') {
+          texts.push(item.voice?.content ?? '');
         } else if (item.msgtype === 'image' && item.image?.url && item.image?.aeskey) {
           const att = await this.downloadImage(body.msgid, item.image);
           if (att) attachments.push(att);
